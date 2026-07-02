@@ -1,0 +1,618 @@
+﻿<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECOND MARKET | BRAND RESHAPING PROJECT</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Noto Sans KR', 'Noto Sans TC', 'sans-serif'],
+                        syne: ['Syne', 'sans-serif'],
+                    },
+                    colors: {
+                        taiwanRed: '#d53e29',
+                        taiwanGreen: '#3f6a4f',
+                        taiwanOrange: '#ec7a47',
+                        taiwanBlue: '#0d1d3d',
+                        darkBg: '#050505',
+                        darkCard: '#111111',
+                        lightBg: '#F6F6F3',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth Scroll Setup */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+        .lenis.lenis-scrolling iframe { pointer-events: none; }
+
+        body { 
+            transition: background-color 1s cubic-bezier(0.77, 0, 0.175, 1), color 1s cubic-bezier(0.77, 0, 0.175, 1);
+            cursor: none;
+            overflow-x: hidden;
+            background-color: #050505;
+        }
+        
+        /* Preloader */
+        #preloader {
+            position: fixed; inset: 0; background: #050505; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #F6F6F3;
+        }
+        
+        /* Premium Noise Grain Overlay */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9998; opacity: 0.03;
+            background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+
+        /* Custom Magnetic Cursor with Blend Mode */
+        #cursor, #cursor-outline {
+            position: fixed; pointer-events: none; z-index: 10000;
+            border-radius: 50%; transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+        }
+        #cursor { width: 10px; height: 10px; background: #fff; transition: width 0.2s, height 0.2s; }
+        #cursor-outline { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.5); transition: width 0.3s, height 0.3s, border-color 0.3s; }
+        body.day-mode #cursor { background: #d53e29; mix-blend-mode: normal; }
+        body.day-mode #cursor-outline { border-color: rgba(213, 62, 41, 0.5); mix-blend-mode: normal; }
+
+        /* Ambient Dynamic Light Blobs */
+        .glow-blob {
+            filter: blur(150px); opacity: 0.15; position: absolute; border-radius: 50%;
+            pointer-events: none; transition: all 1.5s cubic-bezier(0.77, 0, 0.175, 1); z-index: 0;
+            will-change: transform, opacity, background-color;
+        }
+
+        /* Text Split Animation Setup */
+        .char { transform: translateY(110%); transition: transform .5s cubic-bezier(.19,1,.22,1); }
+        .word { overflow: hidden; vertical-align: bottom; }
+
+        /* Cinematic Sweep transition background */
+        .sweep-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #F6F6F3; transform: scaleY(0); transform-origin: bottom;
+            z-index: -1; pointer-events: none; transition: transform 1s cubic-bezier(0.86, 0, 0.07, 1);
+        }
+        body.day-mode .sweep-overlay { transform: scaleY(1); transform-origin: top; }
+
+        @keyframes scroll-track { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .animate-scroll { display: flex; width: max-content; animation: scroll-track 40s linear infinite; }
+
+        /* Glassmorphism & Hover Lifts */
+        .bg-glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .hover-lift { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease; }
+        .hover-lift:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+
+        /* Day Mode Class Overrides */
+        body.day-mode { color: #1c1c1a; }
+        body.day-mode .bg-glass { background: rgba(255, 255, 255, 0.6) !important; border-color: rgba(0,0,0,0.05) !important; }
+        body.day-mode .text-neutral-400 { color: #555550 !important; }
+        body.day-mode .text-neutral-500 { color: #666660 !important; }
+        body.day-mode .text-white { color: #111111 !important; }
+        body.day-mode .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+        body.day-mode .bg-darkCard { background-color: #ffffff !important; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
+    </style>
+</head>
+<body class="bg-darkBg text-neutral-100 font-sans">
+
+    <div id="preloader" class="flex items-center justify-center">
+        <div class="text-center overflow-hidden">
+            <h1 class="font-syne text-6xl md:text-8xl font-black tracking-tighter loading-text">SECOND MARKET</h1>
+            <div class="w-full h-[2px] bg-white/20 mt-8 relative overflow-hidden">
+                <div id="loading-bar" class="absolute top-0 left-0 h-full w-0 bg-taiwanRed"></div>
+            </div>
+            <p id="loading-percent" class="font-syne text-sm font-bold mt-4 tracking-widest">0%</p>
+        </div>
+    </div>
+
+    <div class="noise-overlay"></div>
+    <div class="sweep-overlay"></div>
+
+    <div id="cursor"></div>
+    <div id="cursor-outline"></div>
+
+    <div id="blob-left" class="glow-blob w-[600px] h-[600px] bg-taiwanRed top-0 -left-40"></div>
+    <div id="blob-right" class="glow-blob w-[700px] h-[700px] bg-taiwanBlue bottom-0 right-0"></div>
+
+    <header class="fixed top-0 left-0 w-full z-50 px-6 py-6 gsap-fade-down opacity-0">
+        <div class="max-w-7xl mx-auto flex items-center justify-between bg-darkCard/40 border border-white/10 rounded-full py-4 px-8 shadow-3xl bg-glass transition-all duration-700">
+            <div class="flex items-center space-x-6">
+                <a href="#" class="font-syne text-xl font-extrabold uppercase tracking-tighter magnetic" data-strength="20">
+                    <span class="text-taiwanRed">S</span>ECOND MARKET
+                </a>
+                <span class="hidden md:inline-block w-[1px] h-4 bg-white/20"></span>
+                <div class="hidden md:flex items-center space-x-3 text-[10px] font-black tracking-widest text-neutral-400 uppercase">
+                    <span class="text-taiwanGreen">Taichung</span>
+                    <span class="w-1.5 h-1.5 bg-taiwanOrange rounded-full animate-ping"></span>
+                    <span id="live-clock">--:--:--</span>
+                </div>
+            </div>
+
+            <div class="flex items-center bg-black/35 rounded-full p-1 border border-white/5 relative magnetic" data-strength="10">
+                <button onclick="changeSpaceTheme('day')" id="space-day-btn" class="px-5 py-2 rounded-full text-[10px] font-black transition-all duration-500 text-neutral-400 hover:text-white">朝茶 DAY</button>
+                <button onclick="changeSpaceTheme('night')" id="space-night-btn" class="px-5 py-2 rounded-full text-[10px] font-black transition-all duration-500 bg-white text-black shadow-lg">夜酒 NIGHT</button>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-10 text-[10px] font-black tracking-[0.2em] uppercase">
+                <a href="#concept" class="hover:text-taiwanRed transition-colors magnetic" data-strength="20">Concept</a>
+                <a href="#zoning" class="hover:text-taiwanRed transition-colors magnetic" data-strength="20">Zoning</a>
+                <a href="#strategy" class="hover:text-taiwanRed transition-colors magnetic" data-strength="20">Strategy</a>
+                <a href="#governance" class="hover:text-taiwanRed transition-colors magnetic" data-strength="20">ESG / PPP</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-7xl mx-auto relative pt-24 z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+            <div class="lg:col-span-7 space-y-10">
+                <div class="inline-flex items-center space-x-3 bg-taiwanRed/10 border border-taiwanRed/20 px-4 py-2 rounded-full text-[10px] font-black text-taiwanRed uppercase tracking-[0.25em] gsap-fade-up opacity-0">
+                    <span>Taiwan Spatial Regeneration</span>
+                </div>
+
+                <div class="space-y-6">
+                    <h1 class="font-syne text-6xl md:text-8xl lg:text-[105px] font-black leading-[0.85] tracking-tighter text-reveal">
+                        Urban <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-taiwanRed via-taiwanOrange to-taiwanGreen">Redesign.</span>
+                    </h1>
+                    <div class="space-y-4 text-reveal-sub">
+                        <h2 class="text-xl md:text-2xl font-light leading-relaxed">
+                            <span class="text-[0.65rem] font-bold px-1.5 py-0.5 border border-taiwanRed text-taiwanRed rounded mr-2">KR</span> 백년 역사 속 낮의 차 향기와 밤의 미식이 유기적으로 가변되는 공간 플랫폼
+                        </h2>
+                        <h2 class="text-xl md:text-2xl font-light text-neutral-400 font-sans leading-relaxed">
+                            <span class="text-[0.65rem] font-bold px-1.5 py-0.5 border border-neutral-400 text-neutral-400 rounded mr-2">TC</span> 融合百年歷史身分，晝間茶席與夜間美食 가변式 空間重塑方案
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-6 pt-4 gsap-fade-up opacity-0 delay-200">
+                    <a href="#concept" class="group relative flex items-center space-x-4 bg-white text-black px-10 py-6 rounded-full font-black text-xs tracking-widest transition-all hover:bg-taiwanRed hover:text-white hover:scale-[1.03] shadow-2xl magnetic" data-strength="30">
+                        <span>EXPLORE MASTERPLAN</span>
+                        <i class="fa-solid fa-arrow-right-long group-hover:translate-x-2 transition-transform"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 relative gsap-image-reveal opacity-0">
+                <div class="relative w-full aspect-[4/5] rounded-[50px] overflow-hidden border border-white/10 shadow-3xl group bg-darkCard transition-all duration-700 hover-lift" data-tilt>
+                    <img id="main-space-img" src="https://images.unsplash.com/photo-1508189860359-777d945909ef?auto=format&fit=crop&q=80&w=1200" alt="Taichung Market Structure" class="w-full h-[120%] object-cover parallax-img -translate-y-10">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity group-hover:opacity-80"></div>
+                    
+                    <div class="absolute bottom-12 left-12 space-y-3 z-10">
+                        <p class="text-[10px] font-black text-taiwanOrange tracking-[0.3em] uppercase">Historical Node</p>
+                        <h3 class="text-4xl font-extrabold italic font-syne text-white transform transition-transform group-hover:translate-y-[-5px]">六角樓. <span class="text-lg font-light block font-sans text-neutral-300 mt-1">육각루 코어 허브</span></h3>
+                    </div>
+                </div>
+
+                <div class="absolute -right-6 top-16 bg-darkCard/80 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-3xl animate-bounce-slow z-20 magnetic" data-strength="40">
+                    <div class="flex items-center space-x-3 text-taiwanRed">
+                        <i class="fa-solid fa-trophy text-2xl"></i>
+                        <div>
+                            <p class="text-[9px] font-black tracking-widest text-neutral-400 uppercase">OFFICIAL RECOGNITION</p>
+                            <p class="font-syne text-lg font-extrabold text-white leading-none mt-1">ARCH. PORTFOLIO</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-32 px-6 md:px-12 max-w-7xl mx-auto z-10 relative">
+        <div class="border-t border-white/10 pt-20">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+                <div class="lg:col-span-5 space-y-4">
+                    <h3 class="text-xs font-black text-taiwanRed tracking-[0.3em] uppercase gsap-stagger-text">Quantitative Indicators</h3>
+                    <h2 class="font-syne text-4xl md:text-5xl font-extrabold leading-none text-reveal">The Metrics. <span class="text-neutral-500 font-sans text-xl block mt-2">도시재생 정량화 성과 지표</span></h2>
+                </div>
+                <div class="lg:col-span-7 gsap-fade-up">
+                    <p class="text-neutral-400 text-lg leading-relaxed font-light">
+                        단순한 리모델링이 아닙니다. 공간의 경제적 활성과 환경적 복원을 수치화하여 공적 가치를 실현하는 사회적 연결망(Social Bridge) 설계 프로젝트입니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+                <div class="bg-darkCard p-10 rounded-3xl border border-white/10 hover-lift bg-glass metric-card opacity-0">
+                    <p class="font-syne text-6xl font-black text-taiwanRed counter" data-target="82">0</p><span class="font-syne text-4xl text-taiwanRed font-black">%</span>
+                    <h4 class="text-lg font-bold mt-4">폐기물 배출 감축 <span class="text-xs text-neutral-500 block">Waste Reduction</span></h4>
+                    <p class="text-sm text-neutral-400 mt-2">전면 철거 구조를 탈피하고 전통 육각루의 목재 골조 복원 공법을 적용해 건축 탄소 배출량을 전면 절감합니다.</p>
+                </div>
+                <div class="bg-darkCard p-10 rounded-3xl border border-white/10 hover-lift bg-glass metric-card opacity-0">
+                    <p class="font-syne text-6xl font-black text-taiwanOrange counter" data-target="35">0</p><span class="font-syne text-4xl text-taiwanOrange font-black">+</span>
+                    <h4 class="text-lg font-bold mt-4">청년 창업 브랜드 입점 <span class="text-xs text-neutral-500 block">Young Brands Incubated</span></h4>
+                    <p class="text-sm text-neutral-400 mt-2">노포 원로 상인과 매칭하는 거버넌스를 설계해 차세대 청년 비즈니스 모델의 시장 유입 및 세대 교체를 가속합니다.</p>
+                </div>
+                <div class="bg-darkCard p-10 rounded-3xl border border-white/10 hover-lift bg-glass metric-card opacity-0">
+                    <p class="font-syne text-6xl font-black text-taiwanGreen counter" data-target="240">0</p><span class="font-syne text-4xl text-taiwanGreen font-black">%</span>
+                    <h4 class="text-lg font-bold mt-4">공간 유입량 증대 예상 <span class="text-xs text-neutral-500 block">Traffic Increase Boost</span></h4>
+                    <p class="text-sm text-neutral-400 mt-2">일몰 후 침체되는 유령 공간을 대만 요코초 미식 포장마차 거로 확장해 24시간 순환 가동률을 확보합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="concept" class="py-32 px-6 md:px-12 bg-black/40 border-y border-white/5 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto space-y-20">
+            <div class="flex flex-col md:flex-row justify-between items-end gap-10">
+                <div class="space-y-4">
+                    <span class="text-xs font-black text-taiwanOrange tracking-[0.3em] uppercase gsap-fade-up">Core Concept Dualism</span>
+                    <h2 class="font-syne text-5xl md:text-7xl font-black tracking-tighter leading-none text-reveal">朝茶夜酒.</h2>
+                </div>
+                <p class="max-w-md text-neutral-400 leading-relaxed font-light gsap-fade-up">
+                    낮에는 정온한 다도 공간으로, 밤에는 화려한 네온이 살아나는 야시장으로. 대만의 양면적 생활 양식을 공간 조형으로 완벽히 번역했습니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="group bg-darkCard rounded-[45px] p-12 border border-white/10 space-y-8 hover:border-taiwanGreen/40 transition-all duration-700 bg-glass concept-card opacity-0 hover-lift" data-tilt data-tilt-max="5" data-tilt-speed="400">
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-2">
+                            <h3 class="text-3xl font-extrabold">DAY: 晝日茶席</h3>
+                            <p class="text-taiwanGreen text-xs font-black tracking-widest uppercase">The Zen Of Heritage</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-taiwanGreen/10 flex items-center justify-center text-taiwanGreen transition-transform group-hover:rotate-12">
+                            <i class="fa-solid fa-mug-hot text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="rounded-3xl overflow-hidden aspect-video relative">
+                        <img src="https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?auto=format&fit=crop&q=80&w=1000" alt="Day Concept Wood Tea House" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1500ms] parallax-img">
+                    </div>
+                    <p class="text-neutral-400 leading-relaxed text-sm">
+                        차분한 에이지드 우드 스펙과 자연광이 내부 깊숙이 들어오는 평평한 배치를 강조합니다. 고연령층의 보행을 우선하며 대만의 깊은 정취를 표현합니다.
+                    </p>
+                </div>
+
+                <div class="group bg-darkCard rounded-[45px] p-12 border border-white/10 space-y-8 hover:border-taiwanRed/40 transition-all duration-700 bg-glass concept-card opacity-0 hover-lift mt-0 lg:mt-12" data-tilt data-tilt-max="5" data-tilt-speed="400">
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-2">
+                            <h3 class="text-3xl font-extrabold">NIGHT: 夜間酒市</h3>
+                            <p class="text-taiwanRed text-xs font-black tracking-widest uppercase">The Energy Of Night</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-taiwanRed/10 flex items-center justify-center text-taiwanRed transition-transform group-hover:-rotate-12">
+                            <i class="fa-solid fa-beer-mug-empty text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="rounded-3xl overflow-hidden aspect-video relative">
+                        <img src="https://images.unsplash.com/photo-1553531580-652231eda902?auto=format&fit=crop&q=80&w=1000" alt="Night Concept Neon Lights" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1500ms] parallax-img">
+                    </div>
+                    <p class="text-neutral-400 leading-relaxed text-sm">
+                        시그니처 플라스틱 체어 레드를 모던 네온 인프라와 매칭하여 극적인 미식을 연출합니다. 관광 유입을 주도하며 야간 소상공 활성화에 기여합니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="strategy" class="py-32 px-6 md:px-12 bg-black/30 border-y border-white/5 relative">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-36 gsap-fade-up">
+                <span class="text-xs font-black text-taiwanRed tracking-[0.3em] uppercase">Core Strategy Matrix</span>
+                <h2 class="font-syne text-5xl md:text-6xl font-black leading-none text-reveal">Solving the <br> Issues.</h2>
+                <p class="text-neutral-400 font-light text-base leading-relaxed">
+                    재래시장의 쇠락을 타개하기 위해 정립된 세 가지 핵심 혁신 운영 방안입니다. 단순한 기획을 넘어 실현 가능한 거버넌스 설계에 집중했습니다.
+                </p>
+                <div class="w-16 h-1 bg-gradient-to-r from-taiwanRed to-taiwanOrange rounded-full"></div>
+            </div>
+
+            <div class="lg:col-span-7 space-y-4 font-sans accordion-wrapper">
+                <div class="accordion-item border-b border-white/10 pb-6 cursor-pointer opacity-0 translate-y-10" onclick="toggleAccordion(0)">
+                    <div class="flex justify-between items-center py-6 group">
+                        <div class="flex items-center space-x-6">
+                            <span class="font-syne text-lg font-black text-neutral-500 transition-colors group-hover:text-taiwanRed">01</span>
+                            <h4 class="text-xl md:text-2xl font-bold transition-transform group-hover:translate-x-2">노포 원로 상인 세대 교체 <span class="text-xs text-neutral-500 block font-normal mt-1">Inheritance Program</span></h4>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center icon-indicator transition-all duration-300 group-hover:bg-taiwanRed/20"><i class="fa-solid fa-plus text-sm"></i></div>
+                    </div>
+                    <div class="accordion-content hidden text-sm text-neutral-400 leading-relaxed pl-12 space-y-3 pb-4">
+                        <p>세대 교체는 인위적인 밀어내기가 아닙니다. 기존 상인들의 전통 조리 노하우를 '기록 보존(Archiving)'하고 청년 기획 및 홍보 통합팀과 매칭하여 레시피 로열티 셰어 거버넌스를 가동합니다.</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-b border-white/10 pb-6 cursor-pointer opacity-0 translate-y-10" onclick="toggleAccordion(1)">
+                    <div class="flex justify-between items-center py-6 group">
+                        <div class="flex items-center space-x-6">
+                            <span class="font-syne text-lg font-black text-neutral-500 transition-colors group-hover:text-taiwanOrange">02</span>
+                            <h4 class="text-xl md:text-2xl font-bold transition-transform group-hover:translate-x-2">가변 기술을 활용한 야간 활성 <span class="text-xs text-neutral-500 block font-normal mt-1">Activating the Night Economy</span></h4>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center icon-indicator transition-all duration-300 group-hover:bg-taiwanOrange/20"><i class="fa-solid fa-plus text-sm"></i></div>
+                    </div>
+                    <div class="accordion-content hidden text-sm text-neutral-400 leading-relaxed pl-12 space-y-3 pb-4">
+                        <p>시장 전체 영업 종료 시간을 조정하지 않고, 모듈형 야간 푸드 포차를 인입합니다. 외부 조도 센서 기반 가변 네온 스마트 조명 제어로 일몰과 동시에 완전히 다른 무드를 전개합니다.</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-b border-white/10 pb-6 cursor-pointer opacity-0 translate-y-10" onclick="toggleAccordion(2)">
+                    <div class="flex justify-between items-center py-6 group">
+                        <div class="flex items-center space-x-6">
+                            <span class="font-syne text-lg font-black text-neutral-500 transition-colors group-hover:text-taiwanGreen">03</span>
+                            <h4 class="text-xl md:text-2xl font-bold transition-transform group-hover:translate-x-2">통합 행정 및 대외 협력 구축 <span class="text-xs text-neutral-500 block font-normal mt-1">Unified Admin & Cooperation Protocol</span></h4>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center icon-indicator transition-all duration-300 group-hover:bg-taiwanGreen/20"><i class="fa-solid fa-plus text-sm"></i></div>
+                    </div>
+                    <div class="accordion-content hidden text-sm text-neutral-400 leading-relaxed pl-12 space-y-3 pb-4">
+                        <p>기획/대외협력 행정 단위를 명확히 분리하여 정부 지원 사업과의 연결성을 강화합니다. 대만 중부 타이중의 로컬 매력을 글로벌 관광 자원으로 치환하고 다국어 표기 가이드 정비를 완료합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-black/40 border-y border-white/5 overflow-hidden z-10 relative">
+        <div class="max-w-7xl mx-auto px-6 mb-12">
+            <h3 class="text-xs font-black text-taiwanOrange tracking-[0.3em] uppercase">Global Recognition</h3>
+        </div>
+        
+        <div class="flex overflow-hidden relative">
+            <div class="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-[#050505] to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-[#050505] to-transparent z-10 pointer-events-none"></div>
+            
+            <div class="animate-scroll flex">
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-city text-2xl text-taiwanRed"></i>
+                    <div>
+                        <p class="text-white font-bold text-sm">BEIJING HOOTONG COFFEE</p>
+                        <p class="text-[10px] text-neutral-500">Day / Night Regeneration Model</p>
+                    </div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-beer-mug-empty text-2xl text-taiwanGreen"></i>
+                    <div>
+                        <p class="text-white font-bold text-sm">OSAKA YOKOCHO REBORN</p>
+                        <p class="text-[10px] text-neutral-500">Traditional Evening Pub Revival</p>
+                    </div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-award text-2xl text-taiwanOrange"></i>
+                    <div>
+                        <p class="text-white font-bold text-sm">TAIPEI CREATIVE REHAB</p>
+                        <p class="text-[10px] text-neutral-500">Spatial Regeneration Award</p>
+                    </div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-seedling text-2xl text-taiwanGreen"></i>
+                    <div>
+                        <p class="text-white font-bold text-sm">FSC FOREST ACCREDITED</p>
+                        <p class="text-[10px] text-neutral-500">Sustainable Timber Protocol</p>
+                    </div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-city text-2xl text-taiwanRed"></i>
+                    <div><p class="text-white font-bold text-sm">BEIJING HOOTONG COFFEE</p><p class="text-[10px] text-neutral-500">Day / Night Regeneration Model</p></div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-beer-mug-empty text-2xl text-taiwanGreen"></i>
+                    <div><p class="text-white font-bold text-sm">OSAKA YOKOCHO REBORN</p><p class="text-[10px] text-neutral-500">Traditional Evening Pub Revival</p></div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-award text-2xl text-taiwanOrange"></i>
+                    <div><p class="text-white font-bold text-sm">TAIPEI CREATIVE REHAB</p><p class="text-[10px] text-neutral-500">Spatial Regeneration Award</p></div>
+                </div>
+                <div class="bg-darkCard/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl mx-4 flex items-center space-x-5 whitespace-nowrap hover:border-white/30 transition-colors cursor-default">
+                    <i class="fa-solid fa-seedling text-2xl text-taiwanGreen"></i>
+                    <div><p class="text-white font-bold text-sm">FSC FOREST ACCREDITED</p><p class="text-[10px] text-neutral-500">Sustainable Timber Protocol</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-24 px-6 border-t border-white/10 bg-darkCard/50 relative z-10">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start gap-16">
+            <div class="space-y-6">
+                <h2 class="font-syne text-3xl font-extrabold tracking-tighter uppercase text-reveal">SECOND <br> MARKET.</h2>
+                <p class="text-neutral-500 text-xs max-w-xs leading-relaxed">
+                    타이중 백년 역사시장 활성화를 위한 리브랜딩 및 공간 디자인 제안. <br>
+                    <span class="mt-2 block font-sans opacity-50 text-[10px]">PROFESSIONAL ARCHITECTURAL PORTFOLIO & IR PORTAL</span>
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-16">
+                <div class="space-y-4">
+                    <h5 class="text-[10px] font-black text-white uppercase tracking-widest">Documentation</h5>
+                    <ul class="text-xs text-neutral-500 space-y-3">
+                        <li class="hover:text-white transition-colors cursor-pointer magnetic" data-strength="10">IR Proposal.pdf</li>
+                        <li class="hover:text-white transition-colors cursor-pointer magnetic" data-strength="10">Spatial Blueprints</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h5 class="text-[10px] font-black text-white uppercase tracking-widest">Social</h5>
+                    <ul class="text-xs text-neutral-500 space-y-3">
+                        <li class="hover:text-white transition-colors cursor-pointer underline decoration-taiwanRed underline-offset-4 magnetic" data-strength="10">Instagram</li>
+                        <li class="hover:text-white transition-colors cursor-pointer underline decoration-taiwanGreen underline-offset-4 magnetic" data-strength="10">Behance</li>
+                    </ul>
+                </div>
+                <div class="space-y-4 col-span-2 md:col-span-1">
+                    <h5 class="text-[10px] font-black text-white uppercase tracking-widest">Publicity</h5>
+                    <p class="text-[10px] text-neutral-600 font-bold leading-normal">본 웹사이트는 전문가 수준의 직무 증빙 및 포트폴리오(Occupational License Bridge) 목적으로 제작되었습니다.</p>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto pt-20 flex flex-col md:flex-row justify-between items-center text-[9px] text-neutral-600 font-bold tracking-widest uppercase border-t border-white/5 mt-16">
+            <p>© 2026 Space Branding Project. All rights reserved.</p>
+            <p class="mt-4 md:mt-0">Taichung Municipality Collaborative Portal</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), direction: 'vertical', gestureDirection: 'vertical', smooth: true });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+            tl.to("#loading-bar", { width: "100%", duration: 1.5, ease: "power3.inOut", onUpdate: function() {
+                document.getElementById('loading-percent').innerText = Math.round(this.progress() * 100) + "%";
+            }})
+            .to("#preloader", { y: "-100%", duration: 1, ease: "expo.inOut", delay: 0.2 })
+            .to("header", { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, "-=0.5")
+            .add(() => { initHeroAnimations(); });
+        });
+
+        const textReveals = document.querySelectorAll('.text-reveal');
+        textReveals.forEach(el => {
+            const split = new SplitType(el, { types: 'lines, words, chars' });
+            gsap.from(split.chars, {
+                scrollTrigger: { trigger: el, start: "top 85%" },
+                y: 100, opacity: 0, rotationZ: 5, duration: 1.2,
+                stagger: 0.02, ease: "power4.out"
+            });
+        });
+
+        function initHeroAnimations() {
+            gsap.to(".gsap-fade-up", { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" });
+            gsap.to(".gsap-image-reveal", { y: 0, opacity: 1, duration: 1.5, ease: "expo.out" });
+        }
+
+        gsap.utils.toArray('.parallax-img').forEach(img => {
+            gsap.to(img, {
+                yPercent: 20, ease: "none",
+                scrollTrigger: { trigger: img.parentElement, start: "top bottom", end: "bottom top", scrub: true }
+            });
+        });
+
+        ScrollTrigger.batch(".metric-card", {
+            onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, duration: 1, ease: "power3.out" }),
+            start: "top 85%"
+        });
+        
+        ScrollTrigger.batch(".concept-card", {
+            onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.2, duration: 1.2, ease: "power3.out" }),
+            start: "top 80%"
+        });
+
+        gsap.to(".accordion-item", {
+            scrollTrigger: { trigger: ".accordion-wrapper", start: "top 80%" },
+            opacity: 1, y: 0, stagger: 0.2, duration: 1, ease: "power3.out"
+        });
+
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            ScrollTrigger.create({
+                trigger: counter, start: "top 90%",
+                onEnter: () => {
+                    const target = +counter.getAttribute('data-target');
+                    gsap.to(counter, { innerHTML: target, duration: 2.5, snap: { innerHTML: 1 }, ease: "power3.out" });
+                }, once: true
+            });
+        });
+
+        const cursor = document.getElementById('cursor');
+        const outline = document.getElementById('cursor-outline');
+        
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            gsap.to(outline, { x: e.clientX, y: e.clientY, duration: 0.3 });
+        });
+
+        const magnets = document.querySelectorAll('.magnetic');
+        magnets.forEach(el => {
+            el.addEventListener('mousemove', (e) => {
+                const strength = el.getAttribute('data-strength') || 20;
+                const rect = el.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                gsap.to(el, { x: x * (strength / 100), y: y * (strength / 100), duration: 0.4, ease: "power2.out" });
+                gsap.to(cursor, { scale: 3, duration: 0.3 });
+            });
+            el.addEventListener('mouseleave', () => {
+                gsap.to(el, { x: 0, y: 0, duration: 0.4, ease: "elastic.out(1, 0.3)" });
+                gsap.to(cursor, { scale: 1, duration: 0.3 });
+            });
+        });
+
+        // 테마 스위치 시 주간/야간 이미지 부드럽게 교체되는 로직 포함
+        function changeSpaceTheme(mode) {
+            const body = document.body;
+            const dayBtn = document.getElementById('space-day-btn');
+            const nightBtn = document.getElementById('space-night-btn');
+            const bLeft = document.getElementById('blob-left');
+            const bRight = document.getElementById('blob-right');
+            const spaceImg = document.getElementById('main-space-img');
+
+            if (mode === 'day') {
+                body.classList.add('day-mode');
+                dayBtn.classList.add('bg-black', 'text-white');
+                dayBtn.classList.remove('text-neutral-400');
+                nightBtn.classList.remove('bg-white', 'text-black');
+                nightBtn.classList.add('text-neutral-400');
+                gsap.to(bLeft, { backgroundColor: '#3f6a4f', opacity: 0.1, duration: 1 });
+                gsap.to(bRight, { backgroundColor: '#ec7a47', opacity: 0.1, duration: 1 });
+                
+                // Day Image Transition
+                gsap.to(spaceImg, { opacity: 0, duration: 0.4, onComplete: () => {
+                    spaceImg.src = "https://images.unsplash.com/photo-1493606278519-11aa9f86e40a?auto=format&fit=crop&q=80&w=1600";
+                    gsap.to(spaceImg, { opacity: 1, duration: 0.4 });
+                }});
+            } else {
+                body.classList.remove('day-mode');
+                nightBtn.classList.add('bg-white', 'text-black');
+                nightBtn.classList.remove('text-neutral-400');
+                dayBtn.classList.remove('bg-black', 'text-white');
+                dayBtn.classList.add('text-neutral-400');
+                gsap.to(bLeft, { backgroundColor: '#d53e29', opacity: 0.15, duration: 1 });
+                gsap.to(bRight, { backgroundColor: '#0d1d3d', opacity: 0.15, duration: 1 });
+                
+                // Night Image Transition
+                gsap.to(spaceImg, { opacity: 0, duration: 0.4, onComplete: () => {
+                    spaceImg.src = "https://images.unsplash.com/photo-1508189860359-777d945909ef?auto=format&fit=crop&q=80&w=1600";
+                    gsap.to(spaceImg, { opacity: 1, duration: 0.4 });
+                }});
+            }
+        }
+
+        function toggleAccordion(index) {
+            const accordions = document.querySelectorAll('.accordion-item');
+            accordions.forEach((item, idx) => {
+                const content = item.querySelector('.accordion-content');
+                const indicator = item.querySelector('.icon-indicator i');
+                if (idx === index) {
+                    const isHidden = content.classList.contains('hidden');
+                    if (isHidden) {
+                        content.classList.remove('hidden');
+                        gsap.fromTo(content, { height: 0, opacity: 0 }, { height: "auto", opacity: 1, duration: 0.4 });
+                        gsap.to(indicator, { rotation: 45, duration: 0.3 });
+                    } else {
+                        gsap.to(content, { height: 0, opacity: 0, duration: 0.3, onComplete: () => content.classList.add('hidden') });
+                        gsap.to(indicator, { rotation: 0, duration: 0.3 });
+                    }
+                } else {
+                    gsap.to(content, { height: 0, opacity: 0, duration: 0.3, onComplete: () => content.classList.add('hidden') });
+                    item.querySelector('.icon-indicator i').style.transform = "rotate(0deg)";
+                }
+            });
+        }
+
+        function updateLiveClock() {
+            const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            document.getElementById('live-clock').innerText = formatter.format(new Date());
+        }
+        setInterval(updateLiveClock, 1000); updateLiveClock();
+    </script>
+</body>
+</html>
